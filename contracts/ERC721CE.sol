@@ -234,6 +234,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
                 //does not support minting
                 // revert("fromm == zero, does not support minting");
                 /// fix for single mint//if burning becomes athing???
+                _addTokenToAllTokensEnumeration(tokenId);
             } else if (from != to) {
                 if (from == _preOwner) {
                     _removeTokenFromPreOwner(tokenId);
@@ -243,7 +244,9 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             }
             if (to == address(0)) {
                 //does not support burning /remove and add to owner
-                revert("to == zero, does not support burning"); //remove and add in
+                // revert("to == zero, does not support burning"); //remove and add in
+                _removeTokenFromAllTokensEnumeration(tokenId);
+                // _maxSupply -= 1;
             } else if (to != from) {
                 if (to == _preOwner) {
                     _addTokenToPreOwner(tokenId);
@@ -334,4 +337,16 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     /**@dev my proposal
      * since before _beforeTokenTransfer revert if to = address(0) ,and this token is has no burn function, _removeTokenFromAllTokensEnumeration function has been removed
      */
+
+    function _addTokenToAllTokensEnumeration(uint256 tokenId)
+        internal
+        virtual
+    {}
+
+    function _removeTokenFromAllTokensEnumeration(uint256 tokenId)
+        internal
+        virtual
+    {
+        revert("not burnable");
+    }
 }
