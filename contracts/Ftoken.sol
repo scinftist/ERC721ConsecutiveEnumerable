@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import "./ERC721CEBurnable.sol";
+import "./ERC721CE.sol";
 import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
 
-contract FT is ERC721CEBurn {
+contract FT is ERC721CE {
     using Strings for uint256;
 
     string private name_ = "FFR Project : ffff";
     string private symbol_ = "FPP";
-    uint256 private maxSupply_ = 19;
+    uint256 private maxSupply_ = 50;
     address private preOwner_ = 0x66aB6D9362d4F35596279692F0251Db635165871;
 
     //
@@ -18,12 +18,16 @@ contract FT is ERC721CEBurn {
 
     constructor() ERC721CE(preOwner_, maxSupply_, name_, symbol_) {}
 
-    function singleMint() public {
-        _mint(msg.sender, totalSupply());
-    }
+    // function singleMint() public {
+    //     _mint(msg.sender, totalSupply());
+    // }
 
     function singleMintArbi(uint256 tokenId) public {
         _mint(msg.sender, tokenId);
+    }
+
+    function singleBurn(uint256 tokenId) public {
+        _burn(tokenId);
     }
 
     // in case the marketplace need this

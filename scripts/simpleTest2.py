@@ -140,26 +140,23 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
         else:
             return False
 
-    for i in range(1 + run // 2):
-        # print(i, flush=True)
-        trans()
-        sys.stdout.write(str(i))
-        sys.stdout.flush()
-    # demo.singleMint({"from": accounts[2]})
-    # testo.singleMint({"from": accounts[2]})
-    # demo.singleMint({"from": accounts[2]})
-    # testo.singleMint({"from": accounts[2]})
-    # demo.singleMint({"from": accounts[1]})
-    # testo.singleMint({"from": accounts[1]})
-    # demo.singleMint({"from": accounts[0]})
-    # testo.singleMint({"from": accounts[0]})
-    for i in range(1 + run // 2):
-        # print(i, flush=True)
-        trans()
-        sys.stdout.write(str(i))
-        sys.stdout.flush()
-    # def testingRun(300):
     # for i
+    print("how ?" + demo.getBurn(11))
+
+    own = demo.ownerOf(11)
+
+    demo.singleBurn(11, {"from": own})
+    testo.singleBurn(11, {"from": own})
+    sleep(1)
+    try:
+        o2 = demo.ownerOf(11)
+        print(str(o2))
+    except:
+        pass
+    print(str(account))
+    demo.singleMintArbi(11, {"from": accounts[1]})
+    testo.singleMintArbi(11, {"from": accounts[1]})
+
     print("phase1")
     sleep(3)
     eval()

@@ -21,8 +21,12 @@ pragma solidity ^0.8.0;
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/ERC721.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/interfaces/IERC2309.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/utils/structs/BitMaps.sol";
 
 contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
+    using BitMaps for BitMaps.BitMap;
+    BitMaps.BitMap private _sequentialBurn;
+
     address private immutable _preOwner;
     uint256 private _maxSupply;
     // Mapping from owner to list of owned token IDs
@@ -30,6 +34,12 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
 
     // Mapping from token ID to index of the owner tokens list
     mapping(uint256 => uint256) private _ownedTokensIndex;
+    ///---mapping from allTokenIDs to index
+    //mapping all index to tokenID
+    mapping(uint256 => uint256) private _allIndexToTokenId;
+    mapping(uint256 => uint256) private _allTokenToIndex;
+    uint256 private _mintCounter;
+    uint256 private _burnCounter;
 
     /**
      * @dev this token does not need _allTokens & _allTokensIndex they both handeled virtually
@@ -94,12 +104,24 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         override
         returns (address)
     {
+        if (_sequentialBurn.get(tokenId)) {
+            return address(0);
+        }
         address owner = super._ownerOf(tokenId);
 
         if (owner == address(0) && tokenId < _maxSupply) {
             return _preOwner;
         }
+        // return _sequentialBurn.get(tokenId) ? address(0) : owner;
         return owner;
+    }
+
+    function getBurn(uint256 tokenId) public view returns (string memory) {
+        if (_sequentialBurn.get(tokenId)) {
+            return "true";
+        } else {
+            return "false";
+        }
     }
 
     /**@dev my proposal
@@ -162,7 +184,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * @dev See {IERC721Enumerable-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        return _maxSupply;
+        return _maxSupply + _mintCounter - _burnCounter;
     }
 
     /**
@@ -182,7 +204,24 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             index < ERC721CE.totalSupply(),
             "ERC721Enumerable: global index out of bounds"
         );
-        return index;
+        uint256 virtualIndex = _allIndexToTokenId[index];
+        if (virtualIndex == 0) {
+            return index;
+        }
+        return virtualIndex - 1;
+    }
+
+    ////-----indexByToken
+    function indexByToken(uint256 tokenId) private view returns (uint256) {
+        // require(
+        //     index < ERC721CE.totalSupply(),
+        //     "ERC721Enumerable: global index out of bounds"
+        // );
+        uint256 virtualIndex = _allTokenToIndex[tokenId];
+        if (virtualIndex == 0) {
+            return tokenId;
+        }
+        return virtualIndex - 1;
     }
 
     function _mint(address to, uint256 tokenId) internal virtual override {
@@ -191,7 +230,12 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             "ERC721ConsecutiveEnumerable: can't mint during construction"
         );
         super._mint(to, tokenId);
-        _maxSupply += 1;
+        // if (tokenId < _maxSupply) {
+        //     _burnCounter -= 1;
+        //     _sequentialBurn.unset(tokenId);
+        // } else {
+        //     _mintCounter += 1;
+        // }
     }
 
     /**
@@ -338,15 +382,83 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * since before _beforeTokenTransfer revert if to = address(0) ,and this token is has no burn function, _removeTokenFromAllTokensEnumeration function has been removed
      */
 
-    function _addTokenToAllTokensEnumeration(uint256 tokenId)
-        internal
-        virtual
-    {}
+    function _addTokenToAllTokensEnumeration(uint256 tokenId) internal virtual {
+        uint256 _index = totalSupply();
+        _allIndexToTokenId[_index] = tokenId + 1;
+        _allTokenToIndex[tokenId] = _index + 1;
+    }
 
     function _removeTokenFromAllTokensEnumeration(uint256 tokenId)
         internal
         virtual
     {
-        revert("not burnable");
+        // revert("not burnable");
+        uint256 lastIndex = totalSupply() - 1;
+        // uint256 tokenIndex = tokenByIndex(tokenId);
+        uint256 tokenIndex = indexByToken(tokenId);
+
+        if (lastIndex != tokenIndex) {
+            uint256 lastTokenId = tokenByIndex(lastIndex);
+            _allIndexToTokenId[tokenIndex] = lastTokenId + 1;
+            _allTokenToIndex[lastTokenId] = tokenIndex + 1;
+        }
+        delete _allIndexToTokenId[lastIndex];
+        delete _allTokenToIndex[tokenId];
+    }
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 firstTokenId,
+        uint256 batchSize
+    ) internal virtual override {
+        // if (
+        //     to == address(0) && // if we burn
+        //     firstTokenId < _maxSupply && // and the tokenId was minted in a batch
+        //     !_sequentialBurn.get(firstTokenId) // and the token was never marked as burnt
+        // ) {
+        //     require(
+        //         batchSize == 1,
+        //         "ERC721Consecutive: batch burn not supported"
+        //     );
+        //     _sequentialBurn.set(firstTokenId);
+        //     _burnCounter += 1;
+        // }
+        // if (
+        //     to == address(0) && // if we burn
+        //     !(firstTokenId < _maxSupply) // && // and the tokenId was minted in a batch
+        //     // !_sequentialBurn.get(firstTokenId) // and the token was never marked as burnt
+        // ) {
+        //     _mintCounter -= 1;
+        // }
+        if (to == address(0)) {
+            require(
+                batchSize == 1,
+                "ERC721Consecutive: batch burn not supported"
+            );
+            if (firstTokenId < _maxSupply) {
+                _sequentialBurn.set(firstTokenId);
+                _burnCounter += 1;
+            } else {
+                _mintCounter -= 1;
+            }
+        }
+        // if (from == address(0) && firstTokenId < _maxSupply) {
+        //     _burnCounter -= 1;
+        //     _sequentialBurn.unset(firstTokenId);
+        // }
+        // if (from == address(0) && !(firstTokenId < _maxSupply)) {
+        //     _mintCounter += 1;
+        // }
+        if (from == address(0)) {
+            if (firstTokenId < _maxSupply) {
+                _burnCounter -= 1;
+                _sequentialBurn.unset(firstTokenId);
+            } else {
+                _mintCounter += 1;
+            }
+        }
+
+        super._afterTokenTransfer(from, to, firstTokenId, batchSize);
     }
 }
