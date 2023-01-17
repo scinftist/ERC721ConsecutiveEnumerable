@@ -22,13 +22,17 @@ import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/ERC721.
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/interfaces/IERC2309.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/utils/structs/BitMaps.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/utils/Checkpoints.sol";
 
 contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     using BitMaps for BitMaps.BitMap;
+    using Checkpoints for Checkpoints.Trace160;
+
+    Checkpoints.Trace160 private _sequentialOwnership;
     BitMaps.BitMap private _sequentialBurn;
 
-    address private immutable _preOwner;
-    uint256 private _maxSupply;
+    // address private immutable _preOwner;
+    // uint256 private _maxSupply;
     // Mapping from owner to list of owned token IDs
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
 
@@ -51,22 +55,24 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     ////////-------------------------
 
     constructor(
-        address creator,
-        uint256 batch,
         string memory name_,
-        string memory symbol_
+        string memory symbol_,
+        address[] memory receivers,
+        uint96[] memory amounts
     ) ERC721(name_, symbol_) {
-        _preOwner = creator;
-        super._beforeTokenTransfer(address(0), creator, 0, batch);
-        uint256 start = 0;
-        uint256 end = 0;
-
+        // _preOwner = creator;
+        // super._beforeTokenTransfer(address(0), creator, 0, batch);
+        // uint256 start = 0;
+        // uint256 end = 0;
         // while (start < batch) {
         //     end = (start + 5000) < batch ? start + 5000 : batch;
         //     emit ConsecutiveTransfer(start, end -1, address(0), creator);
         //     start += 5000;
         // }
-        _maxSupply += batch;
+        // _maxSupply += batch;
+        for (uint256 i = 0; i < receivers.length; ++i) {
+            uint96 a = _mintConsecutive(receivers[i], amounts[i]);
+        }
     }
 
     // ---
@@ -92,24 +98,24 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             super.supportsInterface(interfaceId);
     }
 
-    function _ownerOf(uint256 tokenId)
-        internal
-        view
-        virtual
-        override
-        returns (address)
-    {
-        if (_sequentialBurn.get(tokenId)) {
-            return address(0);
-        }
-        address owner = super._ownerOf(tokenId);
+    // function _ownerOf(uint256 tokenId)
+    //     internal
+    //     view
+    //     virtual
+    //     override
+    //     returns (address)
+    // {
+    //     if (_sequentialBurn.get(tokenId)) {
+    //         return address(0);
+    //     }
+    //     address owner = super._ownerOf(tokenId);
 
-        if (owner == address(0) && tokenId < _maxSupply) {
-            return _preOwner;
-        }
-        // return _sequentialBurn.get(tokenId) ? address(0) : owner;
-        return owner;
-    }
+    //     if (owner == address(0) && tokenId < _maxSupply) {
+    //         return _preOwner;
+    //     }
+    //     // return _sequentialBurn.get(tokenId) ? address(0) : owner;
+    //     return owner;
+    // }
 
     // bad remove it
     function getBurn(uint256 tokenId) public view returns (string memory) {
@@ -120,9 +126,13 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         }
     }
 
+    function getStart(address _owner) public view returns (uint256) {
+        return uint256(_ownerStartToken[_owner]);
+    }
+
     //new
     function ownerTokenByIndex(address _owner, uint256 _index)
-        internal
+        public
         view
         returns (uint256)
     {
@@ -134,7 +144,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         uint256 virtual_tokenId = _ownedTokens[_owner][_index];
 
         if (virtual_tokenId == 0) {
-            return _index; //+ _ownerStartToken[_owner];
+            return _index + _ownerStartToken[_owner]; //new
         } else {
             return virtual_tokenId - 1;
         }
@@ -171,7 +181,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * @dev See {IERC721Enumerable-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        return _maxSupply + _mintCounter - _burnCounter;
+        return _totalConsecutiveSupply() + _mintCounter - _burnCounter;
     }
 
     /**
@@ -354,7 +364,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
                 batchSize == 1,
                 "ERC721Consecutive: batch burn not supported"
             );
-            if (firstTokenId < _maxSupply) {
+            if (firstTokenId < _totalConsecutiveSupply()) {
                 _sequentialBurn.set(firstTokenId);
                 _burnCounter += 1;
             } else {
@@ -362,8 +372,8 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             }
         }
 
-        if (from == address(0)) {
-            if (firstTokenId < _maxSupply) {
+        if (from == address(0) && batchSize == 1) {
+            if (firstTokenId < _totalConsecutiveSupply()) {
                 _burnCounter -= 1;
                 _sequentialBurn.unset(firstTokenId);
             } else {
@@ -372,5 +382,81 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         }
 
         super._afterTokenTransfer(from, to, firstTokenId, batchSize);
+    }
+
+    function _maxBatchSize() internal view virtual returns (uint96) {
+        return 5000;
+    }
+
+    function _mintConsecutive(address to, uint96 batchSize)
+        internal
+        virtual
+        returns (uint96)
+    {
+        uint96 first = _totalConsecutiveSupply();
+
+        // minting a batch of size 0 is a no-op//require batchSize > 1
+        if (batchSize > 0) {
+            require(
+                !Address.isContract(address(this)),
+                "ERC721Consecutive: batch minting restricted to constructor"
+            );
+            require(
+                to != address(0),
+                "ERC721Consecutive: mint to the zero address"
+            );
+            require(
+                batchSize <= _maxBatchSize(),
+                "ERC721Consecutive: batch too large"
+            );
+
+            // hook before
+            _beforeTokenTransfer(address(0), to, first, batchSize);
+            /*
+             *new
+             */
+            _ownerStartToken[to] = first;
+            // push an ownership checkpoint & emit event
+            uint96 last = first + batchSize - 1;
+            _sequentialOwnership.push(last, uint160(to));
+            emit ConsecutiveTransfer(first, last, address(0), to);
+
+            // hook after
+            _afterTokenTransfer(address(0), to, first, batchSize);
+        }
+
+        return first;
+    }
+
+    function _totalConsecutiveSupply() private view returns (uint96) {
+        (bool exists, uint96 latestId, ) = _sequentialOwnership
+            .latestCheckpoint();
+        return exists ? latestId + 1 : 0;
+    }
+
+    /**
+     * @dev See {ERC721-_ownerOf}. Override that checks the sequential ownership structure for tokens that have
+     * been minted as part of a batch, and not yet transferred.
+     */
+    function _ownerOf(uint256 tokenId)
+        internal
+        view
+        virtual
+        override
+        returns (address)
+    {
+        address owner = super._ownerOf(tokenId);
+
+        // If token is owned by the core, or beyond consecutive range, return base value
+        if (owner != address(0) || tokenId > type(uint96).max) {
+            return owner;
+        }
+
+        // Otherwise, check the token was not burned, and fetch ownership from the anchors
+        // Note: no need for safe cast, we know that tokenId <= type(uint96).max
+        return
+            _sequentialBurn.get(tokenId)
+                ? address(0)
+                : address(_sequentialOwnership.lowerLookup(uint96(tokenId)));
     }
 }
