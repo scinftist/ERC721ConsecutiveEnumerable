@@ -412,25 +412,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         uint256 firstTokenId,
         uint256 batchSize
     ) internal virtual override {
-        // if (
-        //     to == address(0) && // if we burn
-        //     firstTokenId < _maxSupply && // and the tokenId was minted in a batch
-        //     !_sequentialBurn.get(firstTokenId) // and the token was never marked as burnt
-        // ) {
-        //     require(
-        //         batchSize == 1,
-        //         "ERC721Consecutive: batch burn not supported"
-        //     );
-        //     _sequentialBurn.set(firstTokenId);
-        //     _burnCounter += 1;
-        // }
-        // if (
-        //     to == address(0) && // if we burn
-        //     !(firstTokenId < _maxSupply) // && // and the tokenId was minted in a batch
-        //     // !_sequentialBurn.get(firstTokenId) // and the token was never marked as burnt
-        // ) {
-        //     _mintCounter -= 1;
-        // }
         if (to == address(0)) {
             require(
                 batchSize == 1,
@@ -443,13 +424,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
                 _mintCounter -= 1;
             }
         }
-        // if (from == address(0) && firstTokenId < _maxSupply) {
-        //     _burnCounter -= 1;
-        //     _sequentialBurn.unset(firstTokenId);
-        // }
-        // if (from == address(0) && !(firstTokenId < _maxSupply)) {
-        //     _mintCounter += 1;
-        // }
+
         if (from == address(0)) {
             if (firstTokenId < _maxSupply) {
                 _burnCounter -= 1;

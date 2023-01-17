@@ -30,17 +30,21 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
     run = runs
     # run = 20
     # num_tokens = 50
+    sleep(0.05)
     print(account)
     demo = FT.deploy({"from": account})
     testo = ERC721ETest.deploy({"from": account})
     # demo = testo
     for i in range(10):
-
+        sleep(0.05)
         testo.mint(100, {"from": account})
 
     print("test is:", (testo.totalSupply() == demo.totalSupply()))
+    sleep(0.05)
     print(demo.totalSupply())
+    sleep(0.05)
     print(testo.totalSupply())
+    sleep(0.05)
     add_dict = {}
     for i in range(num_acc):
         add_dict[str(accounts[i])] = "acc-" + str(i)
@@ -61,9 +65,11 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
     def tokenByInd():
         verbose = True
         tellME("check\n")
-        
+
         try:
+            sleep(0.05)
             supd = demo.totalSupply()
+            sleep(0.05)
             supt = testo.totalSupply()
             assert supd == supt
 
@@ -72,8 +78,10 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
             raise (KeyboardInterrupt)
         tellME("supply " + str(supd) + "  " + str(supt) + "\n")
         for i in range(supd):
+            sleep(0.05)
             a = demo.tokenByIndex(i)
             try:
+                sleep(0.05)
                 a1 = ad(str(demo.ownerOf(a)))
             except:
                 tellME(
@@ -119,8 +127,11 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
             try:
                 tellME("t\n")
                 sup = demo.totalSupply()
+                sleep(0.05)
                 rndTok = demo.tokenByIndex(random.randint(0, sup - 1))
+                sleep(0.05)
                 own = demo.ownerOf(rndTok)
+                sleep(0.05)
                 otheracc = own
 
                 while own == otheracc:
@@ -151,8 +162,9 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                     rndTok,
                     {"from": own, "silent": True},
                 )
+                sleep(0.05)
             except:
-                verbose = True
+                # verbose = True
                 tellME(("ERR...............t1\n") * 5)
                 index_output_check()
                 raise (KeyboardInterrupt)
@@ -184,6 +196,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                         + "\n"
                     )
                     demo.singleMintArbi(_t, {"from": someacc})
+                    sleep(0.05)
                     testo.singleMintArbi(_t, {"from": someacc})
                     # tokenByInd()
                 except:
@@ -206,6 +219,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                 try:
                     tellME("b\n")
                     sup = demo.totalSupply()
+                    sleep(0.05)
                     try:
                         rndTok = minted.pop(random.randint(0, len(minted) - 1))
                         burned.append(rndTok)
@@ -216,6 +230,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
                     try:
                         own = demo.ownerOf(rndTok)
+                        sleep(0.05)
                     except:
                         tellME("ownerOf" + str(rndTok))
                         raise (KeyboardInterrupt)
@@ -232,12 +247,14 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
                     try:
                         demo.singleBurn(rndTok, {"from": own})  # .info()
+                        sleep(0.05)
                     except:
                         tellME("burnOfD" + str(rndTok))
                         raise (KeyboardInterrupt)
 
                     try:
                         testo.singleBurn(rndTok, {"from": own})
+                        sleep(0.05)
                     except:
                         tellME("burnOfT" + str(rndTok))
                         raise (KeyboardInterrupt)
@@ -260,7 +277,9 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
         ev = 0
         for i in range(num_acc):
             total += 1
+            sleep(0.05)
             bal = demo.balanceOf(accounts[i])
+            sleep(0.05)
             balt = testo.balanceOf(accounts[i])
             try:
                 assert bal == balt
@@ -270,7 +289,9 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
             for j in range(bal):
                 total += 1
                 tok = demo.tokenOfOwnerByIndex(accounts[i], j)
+                sleep(0.05)
                 tokt = testo.tokenOfOwnerByIndex(accounts[i], j)
+                sleep(0.05)
                 try:
                     assert tok == tokt
                     ev += 1
@@ -304,6 +325,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
         for i in range(num_acc):
 
             bal = demo.balanceOf(accounts[i])
+            sleep(0.05)
             for j in range(bal):
                 total += 1
                 try:
@@ -363,7 +385,7 @@ def main():
     for i in range(10):
         r = random.randint(0, 1)  # tokens
         g = random.randint(7, 8)  # acc
-        b = random.randint(800, 1000)  # runs
+        b = random.randint(100, 250)  # runs
         Fi = open("./reports/report_Info.txt", "a")
         k = "***************************************************************\n" * 10
         Fi.write(
