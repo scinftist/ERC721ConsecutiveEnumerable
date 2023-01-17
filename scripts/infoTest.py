@@ -85,7 +85,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                 a1 = ad(str(demo.ownerOf(a)))
             except:
                 tellME(
-                    "tokenByIndex"
+                    "ERR tokenByIndex"
                     + " -index:"
                     + str(i)
                     + " tokenId: "
@@ -99,7 +99,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                 try:
                     index_output_check()
                 except:
-                    tellME("did'not")
+                    tellME("ERR did'not")
                 raise (KeyboardInterrupt)
 
             b = testo.tokenByIndex(i)
@@ -165,7 +165,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                 sleep(0.05)
             except:
                 # verbose = True
-                tellME(("ERR...............t1\n") * 5)
+                tellME(("ERR ...............t1\n") * 5)
                 index_output_check()
                 raise (KeyboardInterrupt)
             # tokenByInd()
@@ -201,7 +201,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                     # tokenByInd()
                 except:
 
-                    print("------- " + str(_t))
+                    print("ERR ------- " + str(_t))
                     tellME("find :" + str(_t) + "\n")
                     l = [str(i) + " " for i in minted]
                     for i in l:
@@ -209,7 +209,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
                     tellME(str(_t))
 
-                    tellME(("ERR...............m2\n") * 5)
+                    tellME(("ERR ...............m2\n") * 5)
                     tokenByInd()
                     index_output_check()
 
@@ -225,14 +225,14 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                         burned.append(rndTok)
                     except:
 
-                        tellME("b_tokenByIndex" + str(rndTok))
+                        tellME("ERR b_tokenByIndex" + str(rndTok))
                         raise (KeyboardInterrupt)
 
                     try:
                         own = demo.ownerOf(rndTok)
                         sleep(0.05)
                     except:
-                        tellME("ownerOf" + str(rndTok))
+                        tellME("ERR ownerOf" + str(rndTok))
                         raise (KeyboardInterrupt)
 
                     tellME(
@@ -249,7 +249,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                         demo.singleBurn(rndTok, {"from": own})  # .info()
                         sleep(0.05)
                     except:
-                        tellME("burnOfD" + str(rndTok))
+                        tellME("ERR burnOfD" + str(rndTok))
                         raise (KeyboardInterrupt)
 
                     try:
@@ -266,7 +266,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                     # sleep(0.05)
                 except:
                     verbose = True
-                    tellME(("ERR...............b2\n") * 5)
+                    tellME(("ERR ...............b2\n") * 5)
                     tokenByInd()
                     index_output_check()
                     # print(tx)
@@ -317,6 +317,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
         else:
             return False
 
+    # sd
     def index_output_check():
         Fi = open("./reports/report_Info.txt", "a")
         total = 0

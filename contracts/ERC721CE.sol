@@ -48,14 +48,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * @dev this token does not need _allTokens & _allTokensIndex they both handeled virtually
      */
 
-    /**
-     * @dev this part handle _preOwner tokens to index and tokens index to tokens
-     */
-    // //preOwner _indexHandelr index - >tid
-    // mapping(uint256 => uint256) private _preOwnerIndexHandler;
-    // // preOwner _tokenHandler tid -> index
-    // mapping(uint256 => uint256) private _preOwnerTokenHandler;
-
     ////////-------------------------
 
     constructor(
@@ -128,22 +120,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         }
     }
 
-    /**@dev my proposal
-     * @param  _index  get it and return tokenId for preOwner
-     *
-     * since we add 1 in to avoid confusion with defual value of the mapping we  subtract 1 to get tokenIndex
-     * if token hasn't been transferd from preOwner the _preOwnerIndexHandler is 0 (defualt value) so we use virtual Indexing to create a value
-     */
-
-    // function preIndex(uint256 _index) internal view returns (uint256) {
-    //     uint256 virtual_index = _preOwnerIndexHandler[_index];
-    //     if (virtual_index == 0) {
-    //         return _index; //tokenId
-    //     } else {
-    //         return virtual_index - 1; //tokenId
-    //     }
-    // }
-
     //new
     function ownerTokenByIndex(address _owner, uint256 _index)
         internal
@@ -178,22 +154,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         }
     }
 
-    /**@dev my proposal
-     * @param  _tokenId  get it and return tokenIndex for preOwner
-     *
-     * since we add 1 in to avoid confusion with defual value of the mapping we  subtract 1 to get tokenId
-     *if token hasn't been transferd from preOwner the _preOwnerTokenHandler is 0 (defualt value) so we use virtual Indexing to create a value
-     */
-
-    // function preToken(uint256 _tokenId) internal view returns (uint256) {
-    //     uint256 virtual_token = _preOwnerTokenHandler[_tokenId];
-    //     if (virtual_token == 0) {
-    //         return _tokenId; //index
-    //     } else {
-    //         return virtual_token - 1; //index
-    //     }
-    // }
-
     /**
      * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
      */
@@ -204,19 +164,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         override
         returns (uint256)
     {
-        // if preowner
-        // address _preOwner = ERC721FancyMint.preOwner();
         return ownerTokenByIndex(owner, index);
-
-        // require(
-        //     index < ERC721.balanceOf(owner),
-        //     "ERC721Enumerable: owner index out of bounds"
-        // );
-        // if (_preOwner == owner) {
-        //     return preIndex(index);
-        // } else {
-        //     return _ownedTokens[owner][index];
-        // }
     }
 
     /**
@@ -280,7 +228,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     /**
      *This Token does NOT includes mintingand burning.
      *
-     * @dev Hook that is called before any token transfer. This -- NOT --includes minting
+     * @dev Hook that is called before any token transfer. This includes minting
      * and burning.
      *
      * Calling conditions:
@@ -311,21 +259,13 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
                 "batch minting is restricted to constructor"
             );
         } else {
-            // address _preOwner = ERC721FancyMint.preOwner();
-
             if (from == address(0)) {
-                //does not support minting
-                // revert("fromm == zero, does not support minting");
-                /// fix for single mint//if burning becomes athing???
                 _addTokenToAllTokensEnumeration(tokenId);
             } else if (from != to) {
                 _removeTokenFromOwnerEnumeration(from, tokenId);
             }
             if (to == address(0)) {
-                //does not support burning /remove and add to owner
-                // revert("to == zero, does not support burning"); //remove and add in
                 _removeTokenFromAllTokensEnumeration(tokenId);
-                // _maxSupply -= 1;
             } else if (to != from) {
                 _addTokenToOwnerEnumeration(to, tokenId);
             }
@@ -342,22 +282,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         _ownedTokens[to][length] = tokenId + 1;
         _ownedTokensIndex[tokenId] = length + 1;
     }
-
-    /**@dev me
-     * it's like _addTokenToOwnerEnumeration function but for the _preOwner.
-     */
-    // function _addTokenToPreOwner(uint256 tokenId) private {
-    //     // address _preOwner = ERC721FancyMint.preOwner();
-    //     uint256 length = ERC721.balanceOf(_preOwner);
-    //     // add 1 to tokenId to avoid confusion with default value of _preOwnerIndexHandler mapping that is 0
-    //     _preOwnerIndexHandler[length] = tokenId + 1;
-    //     // add 1 to length(that is used for Index) to avoid confusion with default value of _preOwnerTokenHandler mapping that is 0
-    //     _preOwnerTokenHandler[tokenId] = length + 1;
-    // }
-
-    /**@dev my proposal
-    since before _beforeTokenTransfer revert if from = address(0) ,and this token  has no minting function, _addTokenToAllTokensEnumeration function has been removed
-     */
 
     /**
      * @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
@@ -390,26 +314,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         delete _ownedTokensIndex[tokenId];
         delete _ownedTokens[from][lastTokenIndex];
     }
-
-    /**@dev me
-     * it's like _removeTokenFromOwnerEnumeration function but for the _preOwner.
-     */
-    // function _removeTokenFromPreOwner(uint256 tokenId) internal {
-    //     // address _preOwner = ERC721FancyMint.preOwner();
-    //     uint256 lastTokenIndex = ERC721.balanceOf(_preOwner) - 1;
-    //     uint256 tokenIndex = preToken(tokenId);
-    //     if (tokenIndex != lastTokenIndex) {
-    //         uint256 lastTokenId = preIndex(lastTokenIndex);
-    //         // Move the last token to the slot of the to delete token ,and add 1 to avoid confusion with defualt  value of _preOwnerIndexHandler mapping  that is 0
-    //         _preOwnerIndexHandler[tokenIndex] = lastTokenId + 1;
-    //         // Update the moved token's index and add 1 to avoid confusion with defualt value of _preOwnerTokenHandler mapping that is 0
-    //         _preOwnerTokenHandler[lastTokenId] = tokenIndex + 1;
-    //     }
-
-    //     // This also deletes the contents at the last position of the array
-    //     delete _preOwnerIndexHandler[lastTokenIndex];
-    //     delete _preOwnerTokenHandler[tokenId];
-    // }
 
     /**@dev my proposal
      * since before _beforeTokenTransfer revert if to = address(0) ,and this token is has no burn function, _removeTokenFromAllTokensEnumeration function has been removed
