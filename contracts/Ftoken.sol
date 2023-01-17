@@ -10,7 +10,7 @@ contract FT is ERC721CE {
 
     string private name_ = "FFR Project : ffff";
     string private symbol_ = "FPP";
-    uint256 private maxSupply_ = 99;
+    uint256 private maxSupply_ = 50;
     address private preOwner_ = 0x66aB6D9362d4F35596279692F0251Db635165871;
 
     //
@@ -18,8 +18,16 @@ contract FT is ERC721CE {
 
     constructor() ERC721CE(preOwner_, maxSupply_, name_, symbol_) {}
 
-    function singleMint() public {
-        _mint(msg.sender, totalSupply());
+    // function singleMint() public {
+    //     _mint(msg.sender, totalSupply());
+    // }
+
+    function singleMintArbi(uint256 tokenId) public {
+        _mint(msg.sender, tokenId);
+    }
+
+    function singleBurn(uint256 tokenId) public {
+        _burn(tokenId);
     }
 
     // in case the marketplace need this

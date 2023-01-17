@@ -24,13 +24,21 @@ contract ERC721ETest is ERC721Enumerable {
     function mint(uint256 numberOfTokens) public {
         for (uint256 i = 0; i < numberOfTokens; i++) {
             uint256 mintIndex = totalSupply();
-            if (totalSupply() < 99) {
+            if (totalSupply() < 50) {
                 _safeMint(msg.sender, mintIndex);
             }
         }
     }
 
-    function singleMint() public {
-        _mint(msg.sender, totalSupply());
+    // function singleMint() public {
+    //     _mint(msg.sender, totalSupply());
+    // }
+
+    function singleMintArbi(uint256 tokenId) public {
+        _mint(msg.sender, tokenId);
+    }
+
+    function singleBurn(uint256 tokenId) public {
+        _burn(tokenId);
     }
 }
