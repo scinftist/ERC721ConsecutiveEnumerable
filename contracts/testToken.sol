@@ -24,9 +24,8 @@ contract ERC721ETest is ERC721Enumerable {
     function mint(uint256 numberOfTokens) public {
         for (uint256 i = 0; i < numberOfTokens; i++) {
             uint256 mintIndex = totalSupply();
-            if (totalSupply() < 50) {
-                _safeMint(msg.sender, mintIndex);
-            }
+
+            _safeMint(msg.sender, mintIndex);
         }
     }
 

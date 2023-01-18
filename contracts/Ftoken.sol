@@ -10,13 +10,15 @@ contract FT is ERC721CE {
 
     string private name_ = "FFR Project : ffff";
     string private symbol_ = "FPP";
-    uint256 private maxSupply_ = 50;
-    address private preOwner_ = 0x66aB6D9362d4F35596279692F0251Db635165871;
-
+    // uint256 private maxSupply_ = 50;
+    // address private preOwner_ = 0x66aB6D9362d4F35596279692F0251Db635165871;
+    uint96[] private _amounts = [uint96(50), uint96(50), uint96(50)];
     //
     bool private notFinialized = true;
 
-    constructor() ERC721CE(preOwner_, maxSupply_, name_, symbol_) {}
+    constructor(address[] memory _receivers)
+        ERC721CE(name_, symbol_, _receivers, _amounts)
+    {}
 
     // function singleMint() public {
     //     _mint(msg.sender, totalSupply());

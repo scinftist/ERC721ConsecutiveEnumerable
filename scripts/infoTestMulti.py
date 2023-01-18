@@ -11,9 +11,9 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
     account = get_account()
     # num_tokens = 1 + tokens
     # listMint = [0, 1, 2, 3, 4]
-    minted = [i for i in range(50)]
+    minted = [i for i in range(150)]
     print(minted)
-    burned = [i + 50 for i in range(51)]
+    burned = [i + 150 for i in range(150)]
     print(burned)
     # print("list:", listMint)
     # listMint.pop(2)
@@ -32,12 +32,18 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
     # num_tokens = 50
     sleep(0.05)
     print(account)
-    demo = FT.deploy({"from": account})
+    demo = FT.deploy([accounts[0], accounts[1], accounts[2]], {"from": account})
     testo = ERC721ETest.deploy({"from": account})
     # demo = testo
-    for i in range(10):
-        sleep(0.05)
-        testo.mint(100, {"from": account})
+    # for i in range(10):
+    sleep(0.05)
+    testo.mint(50, {"from": accounts[0]})
+    # for i in range(10):
+    sleep(0.05)
+    testo.mint(50, {"from": accounts[1]})
+    # for i in range(10):
+    sleep(0.05)
+    testo.mint(50, {"from": accounts[2]})
 
     print("test is:", (testo.totalSupply() == demo.totalSupply()))
     sleep(0.05)
@@ -172,7 +178,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
         else:
             cas1 = random.randint(0, 100)
 
-            if cas1 < 50:
+            if cas1 < 55:
                 try:
                     tellME("m\n")
                     someacc = accounts[random.randint(0, num_acc - 1)]
@@ -297,12 +303,18 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                     ev += 1
                 except:
                     print("skrew", i, j, tok, tokt)
+                    # tellME("skrew")
                     Fi = open(
                         "./reports/report_Info.txt",
                         "a",
                     )
                     Fi.write(
-                        ("index_output_check exept in i = " + str(i) + " j= " + str(j))
+                        (
+                            "ERR index_output_check except in i = "
+                            + str(i)
+                            + " j= "
+                            + str(j)
+                        )
                     )
                     # Close the file
                     Fi.close()
@@ -353,6 +365,13 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                     nt += 1
                 except:
                     print("index_output_check exept in i = ", i, " j= ", j)
+                    tellME(
+                        "ERR index_output_check except in i = "
+                        + str(i)
+                        + " j= "
+                        + str(j)
+                        + "\n"
+                    )
 
         print("evaluation: ", ev, "/", total)
         # Fi = open("./reports/report_Info.txt", "a")
@@ -360,6 +379,8 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
         # Close the file
         Fi.close()
 
+    print("fisrt check")
+    index_output_check()
     # -----------------
     for i in range(1 + run):
         # print(i, flush=True)
@@ -383,10 +404,10 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
 
 def main():
-    for i in range(10):
+    for i in range(5):
         r = random.randint(0, 1)  # tokens
         g = random.randint(7, 8)  # acc
-        b = random.randint(100, 250)  # runs
+        b = random.randint(1000, 1500)  # runs
         Fi = open("./reports/report_Info.txt", "a")
         k = "***************************************************************\n" * 10
         Fi.write(
