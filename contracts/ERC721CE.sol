@@ -11,13 +11,6 @@ pragma solidity ^0.8.0;
 // import "@openzeppelin/contracts@4.7.0/utils/Strings.sol";
 // import "@openzeppelin/contracts@4.7.0/utils/introspection/ERC165.sol";
 
-// import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/token/ERC721/IERC721.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/token/ERC721/IERC721Receiver.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/token/ERC721/extensions/IERC721Metadata.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Address.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Context.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Strings.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/introspection/ERC165.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/ERC721.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/interfaces/IERC2309.sol";
@@ -31,8 +24,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     Checkpoints.Trace160 private _sequentialOwnership;
     BitMaps.BitMap private _sequentialBurn;
 
-    // address private immutable _preOwner;
-    // uint256 private _maxSupply;
     // Mapping from owner to list of owned token IDs
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
 
@@ -60,28 +51,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         address[] memory receivers,
         uint96[] memory amounts
     ) ERC721(name_, symbol_) {
-        // _preOwner = creator;
-        // super._beforeTokenTransfer(address(0), creator, 0, batch);
-        // uint256 start = 0;
-        // uint256 end = 0;
-        // while (start < batch) {
-        //     end = (start + 5000) < batch ? start + 5000 : batch;
-        //     emit ConsecutiveTransfer(start, end -1, address(0), creator);
-        //     start += 5000;
-        // }
-        // _maxSupply += batch;
         for (uint256 i = 0; i < receivers.length; ++i) {
             uint96 a = _mintConsecutive(receivers[i], amounts[i]);
         }
     }
-
-    // ---
-    // constructor(
-    //     string memory name_,
-    //     string memory symbol_,
-    //     uint256 maxSupply_,
-    //     address preOwner_
-    // ) ERC721FancyMint(name_, symbol_, maxSupply_, preOwner_) {}
 
     /**
      * @dev See {IERC165-supportsInterface}.
@@ -99,36 +72,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     }
 
     // function _ownerOf(uint256 tokenId)
-    //     internal
-    //     view
-    //     virtual
-    //     override
-    //     returns (address)
-    // {
-    //     if (_sequentialBurn.get(tokenId)) {
-    //         return address(0);
-    //     }
-    //     address owner = super._ownerOf(tokenId);
-
-    //     if (owner == address(0) && tokenId < _maxSupply) {
-    //         return _preOwner;
-    //     }
-    //     // return _sequentialBurn.get(tokenId) ? address(0) : owner;
-    //     return owner;
-    // }
-
-    // bad remove it
-    function getBurn(uint256 tokenId) public view returns (string memory) {
-        if (_sequentialBurn.get(tokenId)) {
-            return "true";
-        } else {
-            return "false";
-        }
-    }
-
-    function getStart(address _owner) public view returns (uint256) {
-        return uint256(_ownerStartToken[_owner]);
-    }
 
     //new
     function ownerTokenByIndex(address _owner, uint256 _index)
@@ -150,7 +93,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         }
     }
 
-    function ownerIndexByToken(address _owner, uint256 _tokenId)
+    function ownerIndexByToken(uint256 _tokenId)
         internal
         view
         returns (uint256)
@@ -158,6 +101,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         // uint256 virtual_index = _ownedTokensIndex[_owner][_tokenId];
         uint256 virtual_index = _ownedTokensIndex[_tokenId];
         if (virtual_index == 0) {
+            address _owner = _ownerOf(_tokenId);
             return _tokenId - _ownerStartToken[_owner];
         } else {
             return virtual_index - 1;
@@ -210,10 +154,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
 
     ////-----indexByToken
     function indexByToken(uint256 tokenId) private view returns (uint256) {
-        // require(
-        //     index < ERC721CE.totalSupply(),
-        //     "ERC721Enumerable: global index out of bounds"
-        // );
         uint256 virtualIndex = _allTokenToIndex[tokenId];
         if (virtualIndex == 0) {
             return tokenId;
@@ -227,12 +167,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             "ERC721ConsecutiveEnumerable: can't mint during construction"
         );
         super._mint(to, tokenId);
-        // if (tokenId < _maxSupply) {
-        //     _burnCounter -= 1;
-        //     _sequentialBurn.unset(tokenId);
-        // } else {
-        //     _mintCounter += 1;
-        // }
     }
 
     /**
@@ -309,7 +243,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
 
         uint256 lastTokenIndex = ERC721.balanceOf(from) - 1;
         // uint256 tokenIndex = _ownedTokensIndex[tokenId];
-        uint256 tokenIndex = ownerIndexByToken(from, tokenId);
+        uint256 tokenIndex = ownerIndexByToken(tokenId);
 
         // When the token to delete is the last token, the swap operation is unnecessary
         if (tokenIndex != lastTokenIndex) {
@@ -409,6 +343,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
                 batchSize <= _maxBatchSize(),
                 "ERC721Consecutive: batch too large"
             );
+            require(
+                ERC721.balanceOf(to) == 0,
+                "each account can batch mint once"
+            );
 
             // hook before
             _beforeTokenTransfer(address(0), to, first, batchSize);
@@ -419,6 +357,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             // push an ownership checkpoint & emit event
             uint96 last = first + batchSize - 1;
             _sequentialOwnership.push(last, uint160(to));
+            //emit in bundle of 5k
             emit ConsecutiveTransfer(first, last, address(0), to);
 
             // hook after
