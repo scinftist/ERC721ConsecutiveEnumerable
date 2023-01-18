@@ -178,7 +178,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
         else:
             cas1 = random.randint(0, 100)
 
-            if cas1 < 50:
+            if cas1 < 55:
                 try:
                     tellME("m\n")
                     someacc = accounts[random.randint(0, num_acc - 1)]
@@ -309,7 +309,12 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                         "a",
                     )
                     Fi.write(
-                        ("index_output_check exept in i = " + str(i) + " j= " + str(j))
+                        (
+                            "ERR index_output_check except in i = "
+                            + str(i)
+                            + " j= "
+                            + str(j)
+                        )
                     )
                     # Close the file
                     Fi.close()
@@ -361,7 +366,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                 except:
                     print("index_output_check exept in i = ", i, " j= ", j)
                     tellME(
-                        "index_output_check exept in i = "
+                        "ERR index_output_check except in i = "
                         + str(i)
                         + " j= "
                         + str(j)

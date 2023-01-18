@@ -1,12 +1,12 @@
 from sre_constants import SUCCESS
 from scripts.helpful_scripts import get_account
-from brownie import accounts, config, network, superCol
+from brownie import accounts, config, network, FT
 from time import sleep
 
 
 def deploy_and_create(mint_req=True):
     account = get_account()
-    demo = superCol.deploy({"from": account})
+    demo = FT.deploy([accounts[0], accounts[1], accounts[2]], {"from": account})
     sleep(0.1)
     print("balance of preOwner", demo.balanceOf(account))
     sleep(0.1)
@@ -118,7 +118,7 @@ def deploy_and_create(mint_req=True):
     sleep(0.2)
     print("number of exceptions:", x)
     sleep(2)
-    print(demo.ownerOf(4095))
+    print(demo.ownerOf(123))
     return demo
 
 
