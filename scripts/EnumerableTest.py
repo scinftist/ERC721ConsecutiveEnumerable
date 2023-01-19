@@ -1,6 +1,6 @@
 from sre_constants import SUCCESS
 from scripts.helpful_scripts import get_account
-from brownie import accounts, config, network, ERC721ETest, FT
+from brownie import accounts, config, network, ERC721ETest, CETest
 from time import sleep
 import numpy as np
 import random
@@ -32,7 +32,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
     # num_tokens = 50
     sleep(0.05)
     print(account)
-    demo = FT.deploy([accounts[0], accounts[1], accounts[2]], {"from": account})
+    demo = CETest.deploy([accounts[0], accounts[1], accounts[2]], {"from": account})
     testo = ERC721ETest.deploy({"from": account})
     # demo = testo
     # for i in range(10):
@@ -80,7 +80,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
             assert supd == supt
 
         except:
-            tellME("ERR: supply " + ad(str(supd)) + "  " + ad(str(supt)))
+            tellME("ERR: supply tokenByInd")
             raise (KeyboardInterrupt)
         tellME("supply " + str(supd) + "  " + str(supt) + "\n")
         for i in range(supd):
@@ -131,7 +131,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
         if cas < 50:
             try:
-                tellME("t\n")
+
                 sup = demo.totalSupply()
                 sleep(0.05)
                 rndTok = demo.tokenByIndex(random.randint(0, sup - 1))
@@ -180,7 +180,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
             if cas1 < 55:
                 try:
-                    tellME("m\n")
+
                     someacc = accounts[random.randint(0, num_acc - 1)]
                     flag = True
                     # while flag:
@@ -223,7 +223,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
             else:
                 try:
-                    tellME("b\n")
+
                     sup = demo.totalSupply()
                     sleep(0.05)
                     try:
@@ -364,7 +364,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                     )
                     nt += 1
                 except:
-                    print("index_output_check exept in i = ", i, " j= ", j)
+                    print("index_output_check except in i = ", i, " j= ", j)
                     tellME(
                         "ERR index_output_check except in i = "
                         + str(i)
@@ -372,10 +372,67 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                         + str(j)
                         + "\n"
                     )
+                    raise (KeyboardInterrupt)
 
         print("evaluation: ", ev, "/", total)
         # Fi = open("./reports/report_Info.txt", "a")
         Fi.write((" index-check \n evaluation: " + str(ev) + "/" + str(total) + "\n"))
+        # Close the file
+        Fi.close()
+
+    def tokenByIndex_check():
+        Fi = open("./reports/report_Info.txt", "a")
+        total = 0
+        ev = 0
+        nt = 0
+        supd = demo.totalSupply()
+        supt = testo.totalSupply()
+        try:
+            sleep(0.05)
+            assert supd == supt
+
+        except:
+            tellME("ERR: supply " + str(supd) + "  " + str(supt))
+            raise (KeyboardInterrupt)
+
+        for i in range(supd):
+
+            total += 1
+            try:
+
+                assert demo.tokenByIndex(i) == testo.tokenByIndex(i)
+                ev += 1
+                Fi.write(
+                    (
+                        " token index "
+                        + str(nt)
+                        + " tokenId: CE "
+                        + str(demo.tokenByIndex(i))
+                        + " = Enumerable "
+                        + str(testo.tokenByIndex(i))
+                        + "\n"
+                    )
+                )
+                nt += 1
+            except:
+                print(
+                    "index_output_check except in index = ",
+                    i,
+                )
+                tellME("ERR index_output_check except in iindex = " + str(i) + "\n")
+                raise (KeyboardInterrupt)
+
+        print("evaluation: ", ev, "/", total)
+        # Fi = open("./reports/report_Info.txt", "a")
+        Fi.write(
+            (
+                "tokenByIndex index-check \n evaluation: "
+                + str(ev)
+                + "/"
+                + str(total)
+                + "\n"
+            )
+        )
         # Close the file
         Fi.close()
 
@@ -394,6 +451,8 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
     sleep(2)
     # index_output()
     index_output_check()
+    sleep(1)
+    tokenByIndex_check()
     # index_check()
     sleep(3)
 
@@ -404,7 +463,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
 
 def main():
-    for i in range(5):
+    for i in range(1):
         r = random.randint(0, 1)  # tokens
         g = random.randint(7, 8)  # acc
         b = random.randint(1000, 1500)  # runs

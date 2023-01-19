@@ -48,7 +48,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * @dev some minor changes to ERC721Consecutive
      * @param receivers should be list of unique user(no duplicates)
      * @param amounts amounts can be more than 5000 and emiting consecutiveTransfer() event will be handled in batches of 5000 at most. see _mintConsecutive()
-     * @param amounts can not be equal to 1, for single minting use _mint, this was forced to avoid trigering after {tokenTransfer} during batch minting.
+     * @param amounts can not be equal to 1, for single minting use _mint, this was forced to avoid trigering {_afterTokenTransfer} during batch minting.
      */
     constructor(
         string memory name_,

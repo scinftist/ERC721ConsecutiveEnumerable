@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "./ERC721CE.sol";
 import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
 
-contract FT is ERC721CE {
+contract CETest is ERC721CE {
     using Strings for uint256;
 
     string private name_ = "FFR Project : ffff";

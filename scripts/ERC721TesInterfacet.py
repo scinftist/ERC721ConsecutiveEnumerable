@@ -1,12 +1,12 @@
 from sre_constants import SUCCESS
 from scripts.helpful_scripts import get_account
-from brownie import accounts, config, network, FT
+from brownie import accounts, config, network, CETest
 from time import sleep
 
 
 def deploy_and_create(mint_req=True):
     account = get_account()
-    demo = FT.deploy([accounts[0], accounts[1], accounts[2]], {"from": account})
+    demo = CETest.deploy([accounts[0], accounts[1], accounts[2]], {"from": account})
     sleep(0.1)
     print("balance of preOwner", demo.balanceOf(account))
     sleep(0.1)
@@ -32,7 +32,7 @@ def deploy_and_create(mint_req=True):
         print("approve from preowner to new owner success")
     except:
         x += 1
-        print("goh0")
+        print("ERR: except0")
     # ------
     demo.transferFrom(account, accounts[2], 3, {"from": accounts[3]})
     try:
@@ -40,14 +40,14 @@ def deploy_and_create(mint_req=True):
         print("aprove transfer success1")
     except:
         x += 1
-        print("goh1")
+        print("ERR: except1")
 
     try:
         assert demo.getApproved(3) != accounts[3]
         print("aprove transfer success1-0: ", demo.getApproved(3))
     except:
         x += 1
-        print("goh1")
+        print("ERR: except1")
 
     demo.approve(accounts[4], 0, {"from": accounts[1]})
     try:
@@ -55,7 +55,7 @@ def deploy_and_create(mint_req=True):
         print("aprove regular owner success2")
     except:
         x += 1
-        print("goh2")
+        print("ERR: except2")
 
     # ------
     demo.transferFrom(accounts[1], accounts[6], 0, {"from": accounts[4]})
@@ -64,14 +64,14 @@ def deploy_and_create(mint_req=True):
         print("transfer regular aprove success3")
     except:
         x += 1
-        print("goh3")
+        print("ERR: except3")
 
     try:
         assert demo.getApproved(0) != accounts[4]
         print("aprove transfer success2-0: ", demo.getApproved(4))
     except:
         x += 1
-        print("goh2-0")
+        print("ERR: except2-0")
 
     demo.setApprovalForAll(accounts[5], True, {"from": account})
     try:
@@ -79,7 +79,7 @@ def deploy_and_create(mint_req=True):
         print("approve for all pre owner success4")
     except:
         x += 1
-        print("goh4")
+        print("ERR: except4")
 
     # ------
     demo.transferFrom(account, accounts[7], 10, {"from": accounts[5]})
@@ -88,7 +88,7 @@ def deploy_and_create(mint_req=True):
         print("transfer approve for all for  preOwner success5")
     except:
         x += 1
-        print("goh5")
+        print("ERR: except5")
 
     demo.setApprovalForAll(accounts[8], True, {"from": accounts[2]})
     try:
@@ -96,7 +96,7 @@ def deploy_and_create(mint_req=True):
         print(" Aprroveforall for regular owner succes6")
     except:
         x += 1
-        print("goh6")
+        print("ERR: except6")
 
     # ------
     demo.transferFrom(accounts[2], accounts[9], 2, {"from": accounts[8]})
@@ -105,7 +105,7 @@ def deploy_and_create(mint_req=True):
         print("transfer approve for all for  regular owner success7")
     except:
         x += 1
-        print("goh7")
+        print("ERR: except7")
 
     for i in range(10):
         print("balance of acc ", i, demo.balanceOf(accounts[i]))
