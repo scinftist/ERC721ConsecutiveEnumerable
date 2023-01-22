@@ -114,7 +114,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         if (virtualIndex == 0) {
             return index;
         }
-        return virtualIndex - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtualIndex is not 0.
+        return virtualIndex - 1; //decrement one (-1) to get the value,overflow is impossible becuase the virtualIndex is not 0.
     }
 
     /**
@@ -153,21 +153,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     /**
      *
      *
-     * @dev Hook that is called before any token transfer. This includes minting
+     * @dev See {ERC721-_beforeTokenTransfer}, Hook that is called before any token transfer. This includes minting
      * and burning.
      *
-     * Calling conditions:
-     *
-     * - When `from` and `to` are both non-zero, ``from``'s `tokenId` will be
-     * transferred to `to`.
-     * - When `from` is zero, it reverts it has no minting function
-     * - When `to` is zero, ``from``'s it reverts it has no burn function
-     * - `from` and 'to' cannot be the zero address at the same time.
-     *
-     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
-     */
-    /**
-     * @dev hook modified for consecutive transfer while maintaning enumarability
+     * hook modified for consecutive transfer while maintaning enumarability
      */
 
     function _beforeTokenTransfer(
@@ -197,6 +186,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             }
         }
     }
+
+    /**
+     * @dev See {ERC721-_afterTokenTransfer}. Burning of tokens that have been sequentially minted must be explicit.
+     */
 
     function _afterTokenTransfer(
         address from,
@@ -243,7 +236,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         if (virtual_tokenId == 0) {
             return index + _ownerStartTokenId[owner]; //new
         } else {
-            return virtual_tokenId - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtual_tokenId is not 0.
+            return virtual_tokenId - 1; //decrement one (-1) to get the value,overflow is impossible becuase the virtual_tokenId is not 0.
         }
     }
 
@@ -259,7 +252,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             address _owner = _ownerOf(tokenId);
             return tokenId - _ownerStartTokenId[_owner];
         } else {
-            return virtual_index - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtual_Index is not 0.
+            return virtual_index - 1; //decrement one (-1) to get the value,overflow is impossible becuase the virtual_Index is not 0.
         }
     }
 
@@ -270,7 +263,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         if (virtualIndex == 0) {
             return tokenId;
         }
-        return virtualIndex - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtualIndex is not 0.
+        return virtualIndex - 1; //decrement one (-1) to get the value,overflow is impossible becuase the virtualIndex is not 0.
     }
 
     /**
@@ -281,7 +274,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      */
     function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
         uint256 length = ERC721.balanceOf(to);
-        // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
+        // + 1 to remove the ambiguity of value with default value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
         _ownedTokens[to][length] = tokenId + 1;
         _ownedTokensIndex[tokenId] = length + 1;
     }
@@ -309,7 +302,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         if (tokenIndex != lastTokenIndex) {
             // uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
             uint256 lastTokenId = _ownerTokenByIndex(from, lastTokenIndex); //[from][lastTokenIndex];
-            // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
+            // + 1 to remove the ambiguity of value with default value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
             _ownedTokens[from][tokenIndex] = lastTokenId + 1; // Move the last token to the slot of the to-delete token
             _ownedTokensIndex[lastTokenId] = tokenIndex + 1; // Update the moved token's index
         }
@@ -326,7 +319,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      */
     function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
         uint256 _index = totalSupply();
-        // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
+        // + 1 to remove the ambiguity of value with default value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
         _allIndexToTokenId[_index] = tokenId + 1;
         _allTokenIdToIndex[tokenId] = _index + 1;
     }
@@ -338,14 +331,13 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * @param tokenId uint256 ID of the token to be removed from the tokens list
      */
     function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
-        // revert("not burnable");
         uint256 lastIndex = totalSupply() - 1;
         // uint256 tokenIndex = tokenByIndex(tokenId);
         uint256 tokenIndex = _indexByToken(tokenId);
 
         if (lastIndex != tokenIndex) {
             uint256 lastTokenId = tokenByIndex(lastIndex);
-            // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
+            // + 1 to remove the ambiguity of value with default value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
             _allIndexToTokenId[tokenIndex] = lastTokenId + 1;
             _allTokenIdToIndex[lastTokenId] = tokenIndex + 1;
         }
