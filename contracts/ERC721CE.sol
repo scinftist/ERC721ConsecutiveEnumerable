@@ -4,14 +4,6 @@
 
 pragma solidity ^0.8.0;
 
-// import "@openzeppelin/contracts@4.7.0/token/ERC721/IERC721.sol";
-// import "@openzeppelin/contracts@4.7.0/token/ERC721/IERC721Receiver.sol";
-// import "@openzeppelin/contracts@4.7.0/token/ERC721/extensions/IERC721Metadata.sol";
-// import "@openzeppelin/contracts@4.7.0/utils/Address.sol";
-// import "@openzeppelin/contracts@4.7.0/utils/Context.sol";
-// import "@openzeppelin/contracts@4.7.0/utils/Strings.sol";
-// import "@openzeppelin/contracts@4.7.0/utils/introspection/ERC165.sol";
-
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/ERC721.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/interfaces/IERC2309.sol";
@@ -25,15 +17,15 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     Checkpoints.Trace160 private _sequentialOwnership;
     BitMaps.BitMap private _sequentialBurn;
 
-    // Mapping from owner to list of owned token IDs (some values are available virtualy to access use ownerTokenByIndex(_owner,_index) )
+    // Mapping from owner to list of owned token IDs (some values are available virtualy to access use _ownerTokenByIndex(_owner,_index) )
     mapping(address => mapping(uint256 => uint256)) private _ownedTokens;
 
-    // Mapping from token ID to index of the owner tokens list(some values are available virtualy to access use ownerIndexByToken(_tokenId))
+    // Mapping from token ID to index of the owner tokens list(some values are available virtualy to access use _ownerIndexByToken(_tokenId))
     mapping(uint256 => uint256) private _ownedTokensIndex;
 
     //list of all tokenId available(some values are available virtauly to access use tokenByIndex(_index))
     mapping(uint256 => uint256) private _allIndexToTokenId;
-    //mapping of tokenId to index in _allIndexToTokenId(some value are available virtual to access use indexByToken(tokenId))
+    //mapping of tokenId to index in _allIndexToTokenId(some value are available virtual to access use _indexByToken(tokenId))
     mapping(uint256 => uint256) private _allTokenIdToIndex;
     // number of tokens minted byond consecutiveSupply range
     uint256 private _mintCounter;
@@ -77,64 +69,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     }
 
     /**
-     * @dev See {ERC721-_ownerOf}. Override that checks the sequential ownership structure for tokens that have
-     * been minted as part of a batch, and not yet transferred.
-     */
-    function _ownerOf(uint256 tokenId)
-        internal
-        view
-        virtual
-        override
-        returns (address)
-    {
-        address owner = super._ownerOf(tokenId);
-        // If token is owned by the core, or beyond consecutive range, return base value
-        if (owner != address(0) || tokenId > type(uint96).max) {
-            return owner;
-        }
-        // Otherwise, check the token was not burned, and fetch ownership from the anchors
-        // Note: no need for safe cast, we know that tokenId <= type(uint96).max
-        return
-            _sequentialBurn.get(tokenId)
-                ? address(0)
-                : address(_sequentialOwnership.lowerLookup(uint96(tokenId)));
-    }
-
-    //like tokenOfOwnerByIndex but does NOT revert
-    /**
-     * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
-     */
-    function ownerTokenByIndex(address _owner, uint256 _index)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 virtual_tokenId = _ownedTokens[_owner][_index];
-        //if there is noting is stored in the mapping, consider tokenId sequentialy from _ownerStartTokenId[_owner]
-        if (virtual_tokenId == 0) {
-            return _index + _ownerStartTokenId[_owner]; //new
-        } else {
-            return virtual_tokenId - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtual_tokenId is not 0.
-        }
-    }
-
-    //finding the index of a token in tokens list that owned by the owner
-    function ownerIndexByToken(uint256 _tokenId)
-        internal
-        view
-        returns (uint256)
-    {
-        //if there is noting is stored in the mapping, consider index sequentialy from _ownerStartTokenId[_owner]
-        uint256 virtual_index = _ownedTokensIndex[_tokenId];
-        if (virtual_index == 0) {
-            address _owner = _ownerOf(_tokenId);
-            return _tokenId - _ownerStartTokenId[_owner];
-        } else {
-            return virtual_index - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtual_Index is not 0.
-        }
-    }
-
-    /**
      * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
      */
     function tokenOfOwnerByIndex(address owner, uint256 index)
@@ -148,7 +82,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             index < ERC721.balanceOf(owner),
             "ERC721Enumerable: owner index out of bounds"
         );
-        return ownerTokenByIndex(owner, index);
+        return _ownerTokenByIndex(owner, index); //see _ownerTokenByIndex(owner, index)
     }
 
     /**
@@ -183,14 +117,28 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         return virtualIndex - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtualIndex is not 0.
     }
 
-    ////porvied the token Index in the list of all tokens that have been created.
-    function indexByToken(uint256 tokenId) private view returns (uint256) {
-        uint256 virtualIndex = _allTokenIdToIndex[tokenId];
-        //if mapping is empty, tokenId is the same as index, since they are all sequential and start from 0
-        if (virtualIndex == 0) {
-            return tokenId;
+    /**
+     * @dev See {ERC721-_ownerOf}. Override that checks the sequential ownership structure for tokens that have
+     * been minted as part of a batch, and not yet transferred.
+     */
+    function _ownerOf(uint256 tokenId)
+        internal
+        view
+        virtual
+        override
+        returns (address)
+    {
+        address owner = super._ownerOf(tokenId);
+        // If token is owned by the core, or beyond consecutive range, return base value
+        if (owner != address(0) || tokenId > type(uint96).max) {
+            return owner;
         }
-        return virtualIndex - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtualIndex is not 0.
+        // Otherwise, check the token was not burned, and fetch ownership from the anchors
+        // Note: no need for safe cast, we know that tokenId <= type(uint96).max
+        return
+            _sequentialBurn.get(tokenId)
+                ? address(0)
+                : address(_sequentialOwnership.lowerLookup(uint96(tokenId)));
     }
 
     // see ERC721Consecutive.sol
@@ -203,7 +151,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     }
 
     /**
-     *This Token does NOT includes mintingand burning.
+     *
      *
      * @dev Hook that is called before any token transfer. This includes minting
      * and burning.
@@ -218,8 +166,9 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    /** @dev hook modified for consecutive transfer while maintaning enumarability
-     save me */
+    /**
+     * @dev hook modified for consecutive transfer while maintaning enumarability
+     */
 
     function _beforeTokenTransfer(
         address from,
@@ -247,89 +196,6 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
                 _addTokenToOwnerEnumeration(to, tokenId);
             }
         }
-    }
-
-    /**
-     * @dev Private function to add a token to this extension's ownership-tracking data structures.
-     * @param to address representing the new owner of the given token ID
-     * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
-     * write values + 1 to avoid confussion to mapping default value of uint (uint(0))
-     */
-    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
-        uint256 length = ERC721.balanceOf(to);
-        // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
-        _ownedTokens[to][length] = tokenId + 1;
-        _ownedTokensIndex[tokenId] = length + 1;
-    }
-
-    /**
-     * @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
-     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
-     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
-     * This has O(1) time complexity, but alters the order of the _ownedTokens array.
-     * @param from address representing the previous owner of the given token ID
-     * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
-     * write values + 1 to avoid confussion to mapping default value of uint (uint(0))
-     */
-    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId)
-        private
-    {
-        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
-        // then delete the last slot (swap and pop).
-
-        uint256 lastTokenIndex = ERC721.balanceOf(from) - 1;
-        // uint256 tokenIndex = _ownedTokensIndex[tokenId];
-        uint256 tokenIndex = ownerIndexByToken(tokenId);
-
-        // When the token to delete is the last token, the swap operation is unnecessary
-        if (tokenIndex != lastTokenIndex) {
-            // uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
-            uint256 lastTokenId = ownerTokenByIndex(from, lastTokenIndex); //[from][lastTokenIndex];
-            // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
-            _ownedTokens[from][tokenIndex] = lastTokenId + 1; // Move the last token to the slot of the to-delete token
-            _ownedTokensIndex[lastTokenId] = tokenIndex + 1; // Update the moved token's index
-        }
-
-        // This also deletes the contents at the last position of the array
-        delete _ownedTokensIndex[tokenId];
-        delete _ownedTokens[from][lastTokenIndex];
-    }
-
-    /**
-     * @dev Private function to add a token to this extension's token tracking data structures.
-     * @param tokenId uint256 ID of the token to be added to the tokens list
-     * write values + 1 to avoid confussion to mapping default value of uint (uint(0))
-     */
-    function _addTokenToAllTokensEnumeration(uint256 tokenId) internal virtual {
-        uint256 _index = totalSupply();
-        // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
-        _allIndexToTokenId[_index] = tokenId + 1;
-        _allTokenIdToIndex[tokenId] = _index + 1;
-    }
-
-    /**
-     * @dev Private function to remove a token from this extension's token tracking data structures.
-     * This has O(1) time complexity, but works with to new mapping _allIndexToTokenId, _allTokenIdToIndex
-     * functionality is more similar to _removeTokenFromOwnerEnumeration(address from, uint256 tokenId)
-     * @param tokenId uint256 ID of the token to be removed from the tokens list
-     */
-    function _removeTokenFromAllTokensEnumeration(uint256 tokenId)
-        internal
-        virtual
-    {
-        // revert("not burnable");
-        uint256 lastIndex = totalSupply() - 1;
-        // uint256 tokenIndex = tokenByIndex(tokenId);
-        uint256 tokenIndex = indexByToken(tokenId);
-
-        if (lastIndex != tokenIndex) {
-            uint256 lastTokenId = tokenByIndex(lastIndex);
-            // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
-            _allIndexToTokenId[tokenIndex] = lastTokenId + 1;
-            _allTokenIdToIndex[lastTokenId] = tokenIndex + 1;
-        }
-        delete _allIndexToTokenId[lastIndex];
-        delete _allTokenIdToIndex[tokenId];
     }
 
     function _afterTokenTransfer(
@@ -363,14 +229,138 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
         super._afterTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
-    //see ERC721Consecutive.sol
-    function _maxBatchSize() internal view virtual returns (uint96) {
-        return 5000;
+    //like tokenOfOwnerByIndex but does NOT revert
+    /**
+     * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
+     */
+    function _ownerTokenByIndex(address owner, uint256 index)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 virtual_tokenId = _ownedTokens[owner][index];
+        //if there is noting is stored in the mapping, consider tokenId sequentialy from _ownerStartTokenId[owner]
+        if (virtual_tokenId == 0) {
+            return index + _ownerStartTokenId[owner]; //new
+        } else {
+            return virtual_tokenId - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtual_tokenId is not 0.
+        }
     }
 
+    //finding the index of a token in tokens list that owned by the owner
+    function _ownerIndexByToken(uint256 tokenId)
+        private
+        view
+        returns (uint256)
+    {
+        //if there is noting is stored in the mapping, consider index sequentialy from _ownerStartTokenId[_owner]
+        uint256 virtual_index = _ownedTokensIndex[tokenId];
+        if (virtual_index == 0) {
+            address _owner = _ownerOf(tokenId);
+            return tokenId - _ownerStartTokenId[_owner];
+        } else {
+            return virtual_index - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtual_Index is not 0.
+        }
+    }
+
+    ////provied the token Index in the list of all tokens that have been created.
+    function _indexByToken(uint256 tokenId) private view returns (uint256) {
+        uint256 virtualIndex = _allTokenIdToIndex[tokenId];
+        //if mapping is empty, tokenId is the same as index, since they are all sequential and start from 0
+        if (virtualIndex == 0) {
+            return tokenId;
+        }
+        return virtualIndex - 1; //decrement one (-1) to get the value,overflow is imposible becuase the virtualIndex is not 0.
+    }
+
+    /**
+     * @dev Private function to add a token to this extension's ownership-tracking data structures.
+     * @param to address representing the new owner of the given token ID
+     * @param tokenId uint256 ID of the token to be added to the tokens list of the given address
+     * write values + 1 to avoid confussion to mapping default value of uint (uint(0))
+     */
+    function _addTokenToOwnerEnumeration(address to, uint256 tokenId) private {
+        uint256 length = ERC721.balanceOf(to);
+        // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
+        _ownedTokens[to][length] = tokenId + 1;
+        _ownedTokensIndex[tokenId] = length + 1;
+    }
+
+    /**
+     * @dev Private function to remove a token from this extension's ownership-tracking data structures. Note that
+     * while the token is not assigned a new owner, the `_ownedTokensIndex` mapping is _not_ updated: this allows for
+     * gas optimizations e.g. when performing a transfer operation (avoiding double writes).
+     * This has O(1) time complexity, but alters the order of the _ownedTokens array.
+     * @param from address representing the previous owner of the given token ID
+     * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
+     * write values + 1 to avoid confussion to mapping default value of uint (uint(0))
+     */
+    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId)
+        private
+    {
+        // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
+        // then delete the last slot (swap and pop).
+
+        uint256 lastTokenIndex = ERC721.balanceOf(from) - 1;
+        // uint256 tokenIndex = _ownedTokensIndex[tokenId];
+        uint256 tokenIndex = _ownerIndexByToken(tokenId);
+
+        // When the token to delete is the last token, the swap operation is unnecessary
+        if (tokenIndex != lastTokenIndex) {
+            // uint256 lastTokenId = _ownedTokens[from][lastTokenIndex];
+            uint256 lastTokenId = _ownerTokenByIndex(from, lastTokenIndex); //[from][lastTokenIndex];
+            // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _ownedTokens and _ownedTokensIndex
+            _ownedTokens[from][tokenIndex] = lastTokenId + 1; // Move the last token to the slot of the to-delete token
+            _ownedTokensIndex[lastTokenId] = tokenIndex + 1; // Update the moved token's index
+        }
+
+        // This also deletes the contents at the last position of the array
+        delete _ownedTokensIndex[tokenId];
+        delete _ownedTokens[from][lastTokenIndex];
+    }
+
+    /**
+     * @dev Private function to add a token to this extension's token tracking data structures.
+     * @param tokenId uint256 ID of the token to be added to the tokens list
+     * write values + 1 to avoid confussion to mapping default value of uint (uint(0))
+     */
+    function _addTokenToAllTokensEnumeration(uint256 tokenId) private {
+        uint256 _index = totalSupply();
+        // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
+        _allIndexToTokenId[_index] = tokenId + 1;
+        _allTokenIdToIndex[tokenId] = _index + 1;
+    }
+
+    /**
+     * @dev Private function to remove a token from this extension's token tracking data structures.
+     * This has O(1) time complexity, but works with to new mapping _allIndexToTokenId, _allTokenIdToIndex
+     * functionality is more similar to _removeTokenFromOwnerEnumeration(address from, uint256 tokenId)
+     * @param tokenId uint256 ID of the token to be removed from the tokens list
+     */
+    function _removeTokenFromAllTokensEnumeration(uint256 tokenId) private {
+        // revert("not burnable");
+        uint256 lastIndex = totalSupply() - 1;
+        // uint256 tokenIndex = tokenByIndex(tokenId);
+        uint256 tokenIndex = _indexByToken(tokenId);
+
+        if (lastIndex != tokenIndex) {
+            uint256 lastTokenId = tokenByIndex(lastIndex);
+            // + 1 to remove the ambiguity of value with defualt value(uint 0) in mapping of  _allIndexToTokenId and _allTokenIdToIndex
+            _allIndexToTokenId[tokenIndex] = lastTokenId + 1;
+            _allTokenIdToIndex[lastTokenId] = tokenIndex + 1;
+        }
+        delete _allIndexToTokenId[lastIndex];
+        delete _allTokenIdToIndex[tokenId];
+    }
+
+    //see ERC721Consecutive.sol // omited for now and set to 5k
+    // function _maxBatchSize() internal view virtual returns (uint96) {
+    //     return 5000;
+    // }
+
+    // private
     function _mintConsecutive(address to, uint96 batchSize)
-        internal
-        virtual
+        private
         returns (uint96)
     {
         uint96 first = _totalConsecutiveSupply();
@@ -401,7 +391,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
             /*
              *new
              */
-            _ownerStartTokenId[to] = first;
+            _ownerStartTokenId[to] = first; //storing start token id of batch minting to batch minter address
             // push an ownership checkpoint & emit event
             uint96 last = first + batchSize - 1;
             _sequentialOwnership.push(last, uint160(to));
