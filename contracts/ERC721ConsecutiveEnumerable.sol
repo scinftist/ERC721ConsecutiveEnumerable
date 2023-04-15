@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-// based on OpenZeppelin Contracts (last updated v4.8.0)
+// based on OpenZeppelin Contracts (last updated v4.8.2)
 // Created by sciNFTist.eth
 
 pragma solidity ^0.8.0;
 
-import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/ERC721.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/interfaces/IERC2309.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/utils/structs/BitMaps.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.8.0/contracts/utils/Checkpoints.sol";
+import "../openzepplin-contracts/token/ERC721/ERC721.sol";
+import "../openzepplin-contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "../openzepplin-contracts/interfaces/IERC2309.sol";
+import "../openzepplin-contracts/utils/structs/BitMaps.sol";
+import "../openzepplin-contracts/utils/Checkpoints.sol";
 
-contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
+contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
     using BitMaps for BitMaps.BitMap;
     using Checkpoints for Checkpoints.Trace160;
 
@@ -56,13 +56,9 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(IERC165, ERC721)
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(IERC165, ERC721) returns (bool) {
         return
             interfaceId == type(IERC721Enumerable).interfaceId ||
             super.supportsInterface(interfaceId);
@@ -71,13 +67,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     /**
      * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
      */
-    function tokenOfOwnerByIndex(address owner, uint256 index)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function tokenOfOwnerByIndex(
+        address owner,
+        uint256 index
+    ) public view virtual override returns (uint256) {
         require(
             index < ERC721.balanceOf(owner),
             "ERC721Enumerable: owner index out of bounds"
@@ -98,15 +91,11 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     /**
      * @dev handling tokens index virtualy
      */
-    function tokenByIndex(uint256 index)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function tokenByIndex(
+        uint256 index
+    ) public view virtual override returns (uint256) {
         require(
-            index < ERC721CE.totalSupply(),
+            index < ERC721ConsecutiveEnumerable.totalSupply(),
             "ERC721Enumerable: global index out of bounds"
         );
         uint256 virtualIndex = _allIndexToTokenId[index];
@@ -121,13 +110,9 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * @dev See {ERC721-_ownerOf}. Override that checks the sequential ownership structure for tokens that have
      * been minted as part of a batch, and not yet transferred.
      */
-    function _ownerOf(uint256 tokenId)
-        internal
-        view
-        virtual
-        override
-        returns (address)
-    {
+    function _ownerOf(
+        uint256 tokenId
+    ) internal view virtual override returns (address) {
         address owner = super._ownerOf(tokenId);
         // If token is owned by the core, or beyond consecutive range, return base value
         if (owner != address(0) || tokenId > type(uint96).max) {
@@ -226,11 +211,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     /**
      * @dev See {IERC721Enumerable-tokenOfOwnerByIndex}.
      */
-    function _ownerTokenByIndex(address owner, uint256 index)
-        private
-        view
-        returns (uint256)
-    {
+    function _ownerTokenByIndex(
+        address owner,
+        uint256 index
+    ) private view returns (uint256) {
         uint256 virtual_tokenId = _ownedTokens[owner][index];
         //if there is noting is stored in the mapping, consider tokenId sequentialy from _ownerStartTokenId[owner]
         if (virtual_tokenId == 0) {
@@ -241,11 +225,9 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     }
 
     //finding the index of a token in tokens list that owned by the owner
-    function _ownerIndexByToken(uint256 tokenId)
-        private
-        view
-        returns (uint256)
-    {
+    function _ownerIndexByToken(
+        uint256 tokenId
+    ) private view returns (uint256) {
         //if there is noting is stored in the mapping, consider index sequentialy from _ownerStartTokenId[_owner]
         uint256 virtual_index = _ownedTokensIndex[tokenId];
         if (virtual_index == 0) {
@@ -288,9 +270,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
      * @param tokenId uint256 ID of the token to be removed from the tokens list of the given address
      * write values + 1 to avoid confussion to mapping default value of uint (uint(0))
      */
-    function _removeTokenFromOwnerEnumeration(address from, uint256 tokenId)
-        private
-    {
+    function _removeTokenFromOwnerEnumeration(
+        address from,
+        uint256 tokenId
+    ) private {
         // To prevent a gap in from's tokens array, we store the last token in the index of the token to delete, and
         // then delete the last slot (swap and pop).
 
@@ -351,10 +334,10 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
     // }
 
     // private
-    function _mintConsecutive(address to, uint96 batchSize)
-        private
-        returns (uint96)
-    {
+    function _mintConsecutive(
+        address to,
+        uint96 batchSize
+    ) private returns (uint96) {
         uint96 first = _totalConsecutiveSupply();
 
         // minting a batch of size 0 is a no-op//require batchSize > 1
@@ -380,6 +363,7 @@ contract ERC721CE is ERC721, IERC721Enumerable, IERC2309 {
 
             // hook before
             _beforeTokenTransfer(address(0), to, first, batchSize);
+            __unsafe_increaseBalance(to, batchSize);
             /*
              *new
              */

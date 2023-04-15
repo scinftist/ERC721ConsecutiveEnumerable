@@ -2,10 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import "./ERC721CE.sol";
-import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
+import "./ERC721ConsecutiveEnumerable.sol";
+import {Base64} from "../openzepplin-contracts/utils/Base64.sol";
 
-contract CETest is ERC721CE {
+// import "./ERC721CE.sol";
+// import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
+
+contract CETest is ERC721ConsecutiveEnumerable {
     using Strings for uint256;
 
     string private name_ = "FFR Project : ffff";
@@ -16,9 +19,9 @@ contract CETest is ERC721CE {
     //
     bool private notFinialized = true;
 
-    constructor(address[] memory _receivers)
-        ERC721CE(name_, symbol_, _receivers, _amounts)
-    {}
+    constructor(
+        address[] memory _receivers
+    ) ERC721ConsecutiveEnumerable(name_, symbol_, _receivers, _amounts) {}
 
     // function singleMint() public {
     //     _mint(msg.sender, totalSupply());
@@ -32,26 +35,9 @@ contract CETest is ERC721CE {
         _burn(tokenId);
     }
 
-    // in case the marketplace need this
-    // function emitHandlerSingle() public onlyOwner {
-    //     require(notFinialized, "finalized!0");
-    //     emit ConsecutiveTransfer(0, maxSupply_ - 1, address(0), preOwner_);
-    // }
-
-    // function finalizer() public onlyOwner {
-    //     require(notFinialized, "finalized!1");
-    //     notFinialized = false;
-    // }
-
-    // function get_color(uint256 colorNum) internal view {
-    //     return colors[colorNum * 6:(colorNum + 1) * 6];
-    // }
-
-    function constructTokenURI(uint256 id)
-        internal
-        view
-        returns (string memory)
-    {
+    function constructTokenURI(
+        uint256 id
+    ) internal view returns (string memory) {
         return
             string(
                 abi.encodePacked(
@@ -68,13 +54,9 @@ contract CETest is ERC721CE {
             );
     }
 
-    function tokenURI(uint256 id)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
+    function tokenURI(
+        uint256 id
+    ) public view virtual override returns (string memory) {
         require(_exists(id), "token does not exist!");
         return constructTokenURI(id);
     }

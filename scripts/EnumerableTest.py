@@ -208,7 +208,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                 except:
 
                     print("ERR ------- " + str(_t))
-                    tellME("find :" + str(_t) + "\n")
+                    tellME("ERR find :" + str(_t) + "\n")
                     l = [str(i) + " " for i in minted]
                     for i in l:
                         tellME(i)
@@ -262,7 +262,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                         testo.singleBurn(rndTok, {"from": own})
                         sleep(0.05)
                     except:
-                        tellME("burnOfT" + str(rndTok))
+                        tellME("ERR burnOfT" + str(rndTok))
                         raise (KeyboardInterrupt)
                     # try:
                     #     tokenByInd()
@@ -321,6 +321,10 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
         print("evaluation: ", ev, "/", total)
         Fi = open("./reports/report_Info.txt", "a")
+        for i in range(10):
+            a = demo.balanceOf(accounts[i])
+            b = testo.balanceOf(accounts[i])
+            Fi.write("balance of " + str(i) + "is " + str(a) + " " + str(b))
         Fi.write(("\n evaluation: " + str(ev) + "/" + str(total) + "\n"))
         # Close the file
         Fi.close()
@@ -392,7 +396,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
             assert supd == supt
 
         except:
-            tellME("ERR: supply " + str(supd) + "  " + str(supt))
+            tellME("ERR : supply " + str(supd) + "  " + str(supt))
             raise (KeyboardInterrupt)
 
         for i in range(supd):
@@ -416,7 +420,7 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
                 nt += 1
             except:
                 print(
-                    "index_output_check except in index = ",
+                    "ERR index_output_check except in index = ",
                     i,
                 )
                 tellME("ERR index_output_check except in iindex = " + str(i) + "\n")
@@ -464,9 +468,9 @@ def deploy_and_create(tokens, accs, runs, mint_req=True):
 
 def main():
     for i in range(1):
-        r = random.randint(0, 1)  # tokens
+        r = random.randint(2, 3)  # tokens
         g = random.randint(7, 8)  # acc
-        b = random.randint(1000, 1500)  # runs
+        b = random.randint(1500, 2000)  # runs
         Fi = open("./reports/report_Info.txt", "a")
         k = "***************************************************************\n" * 10
         Fi.write(
