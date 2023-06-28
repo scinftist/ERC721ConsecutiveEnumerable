@@ -128,10 +128,10 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
 
     // see ERC721Consecutive.sol
     function _mint(address to, uint256 tokenId) internal virtual override {
-        require(
-            Address.isContract(address(this)),
-            "ERC721ConsecutiveEnumerable: can't mint during construction"
-        );
+        if (address(this).code.length == 0) {
+            revert("single minting during construction is forbidden");
+        }
+
         super._mint(to, tokenId);
     }
 
@@ -395,7 +395,7 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
         return first;
     }
 
-    function _totalConsecutiveSupply() private view returns (uint96) {
+    function _totalConsecutiveSupply() internal view returns (uint96) {
         (bool exists, uint96 latestId, ) = _sequentialOwnership
             .latestCheckpoint();
         return exists ? latestId + 1 : 0;
