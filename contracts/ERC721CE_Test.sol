@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./ERC721ConsecutiveEnumerable.sol";
-import {Base64} from "../openzepplin-contracts/utils/Base64.sol";
+import "./ERC721ConsecutiveEnumerable/ERC721ConsecutiveEnumerable.sol";
+import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 
 // import "./ERC721CE.sol";
 // import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";

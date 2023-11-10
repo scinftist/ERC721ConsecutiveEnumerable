@@ -4,11 +4,11 @@
 
 pragma solidity ^0.8.0;
 
-import "../openzepplin-contracts/token/ERC721/ERC721.sol";
-import "../openzepplin-contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "../openzepplin-contracts/interfaces/IERC2309.sol";
-import "../openzepplin-contracts/utils/structs/BitMaps.sol";
-import "../openzepplin-contracts/utils/Checkpoints.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "@openzeppelin/contracts/interfaces/IERC2309.sol";
+import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import "@openzeppelin/contracts/utils/Checkpoints.sol";
 
 contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
     using BitMaps for BitMaps.BitMap;
