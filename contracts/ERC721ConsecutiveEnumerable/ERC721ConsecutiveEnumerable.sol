@@ -2,13 +2,15 @@
 // based on OpenZeppelin Contracts (last updated v4.8.2)
 // Created by sciNFTist.eth
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/interfaces/IERC2309.sol";
-import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
-import "@openzeppelin/contracts/utils/Checkpoints.sol";
+import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import {Checkpoints} from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
+
+// import {Checkpoints} from     "../../../utils/structs/Checkpoints.sol";
 
 contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
     using BitMaps for BitMaps.BitMap;
@@ -155,7 +157,7 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
         //enumeration operations does not triger during batch minting and instead will be handled virtualy.
         if (batchSize > 1) {
             require(
-                !Address.isContract(address(this)),
+                address(this).code.length > 0,
                 "batch minting is restricted to constructor"
             );
         } else {
@@ -343,7 +345,7 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
         // minting a batch of size 0 is a no-op//require batchSize > 1
         if (batchSize > 0) {
             require(
-                !Address.isContract(address(this)),
+                address(this).code.length > 0,
                 "ERC721Consecutive: batch minting restricted to constructor"
             );
             require(
@@ -363,7 +365,7 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
 
             // hook before
             _beforeTokenTransfer(address(0), to, first, batchSize);
-            __unsafe_increaseBalance(to, batchSize);
+            _increaseBalance(to, batchSize);
             /*
              *new
              */

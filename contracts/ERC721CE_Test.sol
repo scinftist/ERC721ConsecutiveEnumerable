@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
-import "./ERC721ConsecutiveEnumerable/ERC721ConsecutiveEnumerable.sol";
+import "contracts/ERC721ConsecutiveEnumerable/ERC721ConsecutiveEnumerable.sol";
+// contracts/ERC721ConsecutiveEnumerable
+// import "./ERC721ConsecutiveEnumerable/ERC721ConsecutiveEnumerable.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 
 // import "./ERC721CE.sol";
@@ -57,7 +59,7 @@ contract CETest is ERC721ConsecutiveEnumerable {
     function tokenURI(
         uint256 id
     ) public view virtual override returns (string memory) {
-        require(_exists(id), "token does not exist!");
+        _requireOwned(id);
         return constructTokenURI(id);
     }
 }
