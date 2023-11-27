@@ -10,20 +10,25 @@ import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 // import "./ERC721CE.sol";
 // import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
 
-contract CETest is ERC721ConsecutiveEnumerable {
+contract ERC721CE_Test is ERC721ConsecutiveEnumerable {
     using Strings for uint256;
 
     string private name_ = "FFR Project : ffff";
     string private symbol_ = "FPP";
     // uint256 private maxSupply_ = 50;
     // address private preOwner_ = 0x66aB6D9362d4F35596279692F0251Db635165871;
-    uint96[] private _amounts = [uint96(50), uint96(50), uint96(50)];
+    uint96[] private _amounts = [uint96(50), uint96(60), uint96(70)];
+    address[] private _recivers = [
+        0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
+        0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,
+        0x976EA74026E726554dB657fA54763abd0C3a0aa9
+    ];
     //
     bool private notFinialized = true;
 
-    constructor(
-        address[] memory _receivers
-    ) ERC721ConsecutiveEnumerable(name_, symbol_, _receivers, _amounts) {}
+    constructor()
+        ERC721ConsecutiveEnumerable(name_, symbol_, _recivers, _amounts)
+    {}
 
     // function singleMint() public {
     //     _mint(msg.sender, totalSupply());

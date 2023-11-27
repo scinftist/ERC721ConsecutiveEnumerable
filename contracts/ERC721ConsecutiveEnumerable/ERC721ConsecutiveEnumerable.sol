@@ -37,21 +37,33 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
     ////-------starting tokenId for batch minters
     mapping(address => uint256) private _ownerStartTokenId;
 
-    ////////-------------------------
+    error ERC721ForbiddenBatchMint();
+
     /**
-     * @dev some minor changes to ERC721Consecutive
-     * @param receivers should be list of unique user(no duplicates)
-     * @param amounts amounts can be more than 5000 and emiting consecutiveTransfer() event will be handled in batches of 5000 at most. see _mintConsecutive()
-     * @param amounts can not be equal to 1, for single minting use _mint, this was forced to avoid trigering {_afterTokenTransfer} during batch minting.
+     * @dev Exceeds the max amount of mints per batch.
      */
+    error ERC721ExceededMaxBatchMint(uint256 batchSize, uint256 maxBatch);
+
+    /**
+     * @dev Individual minting is not allowed.
+     */
+    error ERC721ForbiddenMint();
+
+    /**
+     * @dev Batch burn is not supported.
+     */
+    error ERC721ForbiddenBatchBurn();
+
+    ////////-------------------------
+
     constructor(
         string memory name_,
         string memory symbol_,
-        address[] memory receivers,
-        uint96[] memory amounts
+        address[] memory _recivers,
+        uint96[] memory _amounts
     ) ERC721(name_, symbol_) {
-        for (uint256 i = 0; i < receivers.length; ++i) {
-            uint96 a = _mintConsecutive(receivers[i], amounts[i]);
+        for (uint256 i = 0; i < _recivers.length; ++i) {
+            uint96 a = _mintConsecutive(_recivers[i], _amounts[i]);
         }
     }
 
@@ -84,13 +96,11 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
      * @dev See {IERC721Enumerable-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        return _totalConsecutiveSupply() + _mintCounter - _burnCounter;
+        return _nextConsecutiveId() + _mintCounter - _burnCounter;
     }
 
     /**
-     * @dev See {IERC721Enumerable-tokenByIndex}.
-     */
-    /**
+     * @dev See {IERC721Enumerable-tokenByIndex}
      * @dev handling tokens index virtualy
      */
     function tokenByIndex(
@@ -117,7 +127,11 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
     ) internal view virtual override returns (address) {
         address owner = super._ownerOf(tokenId);
         // If token is owned by the core, or beyond consecutive range, return base value
-        if (owner != address(0) || tokenId > type(uint96).max) {
+        if (
+            owner != address(0) ||
+            tokenId > type(uint96).max ||
+            tokenId < _firstConsecutiveId() //? @me
+        ) {
             return owner;
         }
         // Otherwise, check the token was not burned, and fetch ownership from the anchors
@@ -128,13 +142,53 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
                 : address(_sequentialOwnership.lowerLookup(uint96(tokenId)));
     }
 
-    // see ERC721Consecutive.sol
-    function _mint(address to, uint256 tokenId) internal virtual override {
+    // // see ERC721Consecutive.sol
+    // //
+    // function _mint(address to, uint256 tokenId) internal virtual override {
+    //     if (address(this).code.length == 0) {
+    //         revert("single minting during construction is forbidden");
+    //     }
+
+    //     super._mint(to, tokenId);
+    // }
+    /**
+     * @dev See {ERC721-_update}. Override version that restricts normal minting to after construction.
+     *
+     * WARNING: Using {ERC721Consecutive} prevents minting during construction in favor of {_mintConsecutive}.
+     * After construction, {_mintConsecutive} is no longer available and minting through {_update} becomes available.
+     */
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal virtual override returns (address) {
+        address previousOwner = super._update(to, tokenId, auth);
+
+        // only mint after construction
         if (address(this).code.length == 0) {
-            revert("single minting during construction is forbidden");
+            if (previousOwner == address(0)) revert ERC721ForbiddenMint();
+        } else {
+            if (previousOwner == address(0)) {
+                _addTokenToAllTokensEnumeration(tokenId);
+            } else if (previousOwner != to) {
+                _removeTokenFromOwnerEnumeration(previousOwner, tokenId);
+            }
+            if (to == address(0)) {
+                _removeTokenFromAllTokensEnumeration(tokenId);
+            } else if (to != previousOwner) {
+                _addTokenToOwnerEnumeration(to, tokenId);
+            }
+        }
+        // record burn
+        if (
+            to == address(0) && // if we burn
+            tokenId < _nextConsecutiveId() && // and the tokenId was minted in a batch
+            !_sequentialBurn.get(tokenId) // and the token was never marked as burnt
+        ) {
+            _sequentialBurn.set(tokenId);
         }
 
-        super._mint(to, tokenId);
+        return previousOwner;
     }
 
     /**
@@ -146,68 +200,69 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
      * hook modified for consecutive transfer while maintaning enumarability
      */
 
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId,
-        uint256 batchSize
-    ) internal virtual override {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    // function _beforeTokenTransfer(
+    //     address from,
+    //     address to,
+    //     uint256 tokenId,
+    //     uint256 batchSize
+    // ) internal virtual override {
+    //     // super._beforeTokenTransfer(from, to, tokenId, batchSize);
 
-        //enumeration operations does not triger during batch minting and instead will be handled virtualy.
-        if (batchSize > 1) {
-            require(
-                address(this).code.length > 0,
-                "batch minting is restricted to constructor"
-            );
-        } else {
-            if (from == address(0)) {
-                _addTokenToAllTokensEnumeration(tokenId);
-            } else if (from != to) {
-                _removeTokenFromOwnerEnumeration(from, tokenId);
-            }
-            if (to == address(0)) {
-                _removeTokenFromAllTokensEnumeration(tokenId);
-            } else if (to != from) {
-                _addTokenToOwnerEnumeration(to, tokenId);
-            }
-        }
-    }
+    //     //enumeration operations does not triger during batch minting and instead will be handled virtualy.
+    //     if (batchSize > 1) {
+    //         require(
+    //             address(this).code.length > 0,
+    //             "batch minting is restricted to constructor"
+    //         );
+    //     } else {
+    //         if (from == address(0)) {
+    //             _addTokenToAllTokensEnumeration(tokenId);
+    //         } else if (from != to) {
+    //             _removeTokenFromOwnerEnumeration(from, tokenId);
+    //         }
+    //         if (to == address(0)) {
+    //             _removeTokenFromAllTokensEnumeration(tokenId);
+    //         } else if (to != from) {
+    //             _addTokenToOwnerEnumeration(to, tokenId);
+    //         }
+    //     }
+    // }
 
     /**
      * @dev See {ERC721-_afterTokenTransfer}. Burning of tokens that have been sequentially minted must be explicit.
      */
+    // ???
+    // function _afterTokenTransfer(
+    //     address from,
+    //     address to,
+    //     uint256 firstTokenId,
+    //     uint256 batchSize
+    // ) internal virtual override {
+    //     if (to == address(0)) {
+    //         require(
+    //             batchSize == 1,
+    //             "ERC721Consecutive: batch burn not supported"
+    //         );
+    //         if (firstTokenId < _nextConsecutiveId()) {
+    //             _sequentialBurn.set(firstTokenId); //@me
+    //             _burnCounter += 1;
+    //         } else {
+    //             _mintCounter -= 1;
+    //         }
+    //     }
 
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 firstTokenId,
-        uint256 batchSize
-    ) internal virtual override {
-        if (to == address(0)) {
-            require(
-                batchSize == 1,
-                "ERC721Consecutive: batch burn not supported"
-            );
-            if (firstTokenId < _totalConsecutiveSupply()) {
-                _sequentialBurn.set(firstTokenId);
-                _burnCounter += 1;
-            } else {
-                _mintCounter -= 1;
-            }
-        }
+    //     if (from == address(0) && batchSize == 1) {
+    //         //@me
+    //         if (firstTokenId < _nextConsecutiveId()) {
+    //             _burnCounter -= 1;
+    //             _sequentialBurn.unset(firstTokenId);
+    //         } else {
+    //             _mintCounter += 1;
+    //         }
+    //     }
 
-        if (from == address(0) && batchSize == 1) {
-            if (firstTokenId < _totalConsecutiveSupply()) {
-                _burnCounter -= 1;
-                _sequentialBurn.unset(firstTokenId);
-            } else {
-                _mintCounter += 1;
-            }
-        }
-
-        super._afterTokenTransfer(from, to, firstTokenId, batchSize);
-    }
+    //     super._afterTokenTransfer(from, to, firstTokenId, batchSize);
+    // }
 
     //like tokenOfOwnerByIndex but does NOT revert
     /**
@@ -339,13 +394,13 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
     function _mintConsecutive(
         address to,
         uint96 batchSize
-    ) private returns (uint96) {
-        uint96 first = _totalConsecutiveSupply();
+    ) internal virtual returns (uint96) {
+        uint96 first = _nextConsecutiveId();
 
         // minting a batch of size 0 is a no-op//require batchSize > 1
         if (batchSize > 0) {
             require(
-                address(this).code.length > 0,
+                address(this).code.length == 0,
                 "ERC721Consecutive: batch minting restricted to constructor"
             );
             require(
@@ -364,7 +419,7 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
             );
 
             // hook before
-            _beforeTokenTransfer(address(0), to, first, batchSize);
+            // _beforeTokenTransfer(address(0), to, first, batchSize);
             _increaseBalance(to, batchSize);
             /*
              *new
@@ -391,15 +446,26 @@ contract ERC721ConsecutiveEnumerable is ERC721, IERC721Enumerable, IERC2309 {
             // emit ConsecutiveTransfer(first, last, address(0), to);
 
             // hook after
-            _afterTokenTransfer(address(0), to, first, batchSize);
+            // _afterTokenTransfer(address(0), to, first, batchSize);
         }
 
         return first;
     }
 
-    function _totalConsecutiveSupply() internal view returns (uint96) {
+    /**
+     * @dev Used to offset the first token id in {_nextConsecutiveId}
+     */
+    function _firstConsecutiveId() internal view virtual returns (uint96) {
+        return 0;
+    }
+
+    /**
+     * @dev Returns the next tokenId to mint using {_mintConsecutive}. It will return {_firstConsecutiveId}
+     * if no consecutive tokenId has been minted before.
+     */
+    function _nextConsecutiveId() private view returns (uint96) {
         (bool exists, uint96 latestId, ) = _sequentialOwnership
             .latestCheckpoint();
-        return exists ? latestId + 1 : 0;
+        return exists ? latestId + 1 : _firstConsecutiveId();
     }
 }
