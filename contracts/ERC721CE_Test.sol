@@ -17,11 +17,11 @@ contract ERC721CE_Test is ERC721ConsecutiveEnumerable {
     string private symbol_ = "FPP";
     // uint256 private maxSupply_ = 50;
     // address private preOwner_ = 0x66aB6D9362d4F35596279692F0251Db635165871;
-    uint96[] private _amounts = [uint96(50), uint96(60), uint96(70)];
+    uint96[] private _amounts = [uint96(50), uint96(50), uint96(50)];
     address[] private _recivers = [
         0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
-        0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC,
-        0x976EA74026E726554dB657fA54763abd0C3a0aa9
+        0x70997970C51812dc3A010C7d01b50e0d17dc79C8,
+        0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
     ];
     //
     bool private notFinialized = true;

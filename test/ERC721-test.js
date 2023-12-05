@@ -13,6 +13,11 @@ describe("testing ERC721 Interfaces", () => {
     console.log(`deployed address is ${await erc721CE.getAddress()}`);
   });
   it("erc721", async () => {
-    console.log(`pas`);
+    let ll = [50,50,50]
+    for(i=0;i<3;i++){
+      // console.log(`${await accList[i].getAddress()}`)
+      await expect(await erc721CE.balanceOf(await accList[i].getAddress())).to.be.equal(ll[i])
+
+    }
   });
 });
