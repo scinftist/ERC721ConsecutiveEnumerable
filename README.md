@@ -1,6 +1,16 @@
 # ERC721ConsecutiveEnumerable
-this contract is merging ERC721Enumerable.sol and ERC721Consecutive.sol OpenZeppelin V4.8.0
+ERC721Consecutive make batch minting possible but it is not IERC721Enumerable compatible.
+the following contract Is a proof of concept that shows with some minor changes to ERC721Consecutive and ERC721Enumerable.
+it can be merge to one contract. with following features:
 
-./contracts/ERC721CE.sol : ERC721ConsecutiveEnumerable
+- batch minting during constructor.
+- single minting after deployment.
+- single burning of a token.
+- full IERC721Enumerable compatibility.
+- all of the indexing functions are O(1)
+----
+current contract is base on OpenZeppelin implementation of ERC721 v4.9
 
-test deployment on goerli testnet: [0xaF8fA6fC07Da285a94f37148218fFd170eE827ff](https://goerli.etherscan.io/address/0xaf8fa6fc07da285a94f37148218ffd170ee827ff#code)
+version V5.0 is on the way.
+
+to see techniacal explanation of this contract see this [issue](https://github.com/OpenZeppelin/openzeppelin-contracts/issues/3985)
